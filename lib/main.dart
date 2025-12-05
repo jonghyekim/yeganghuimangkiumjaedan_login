@@ -68,6 +68,27 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
+  Future<void> _loginWithGoogle() async {
+    // 로딩 스피너 표시
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    // 1~2초 정도 대기 (프로토타입용)
+    await Future.delayed(const Duration(seconds: 2));
+
+    // 로딩 다이얼로그 닫기
+    Navigator.pop(context);
+
+    // 성공 페이지로 이동
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const SuccessPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,6 +174,37 @@ class _LoginPageState extends State<LoginPage> {
                 child: const Text(
                   "로그인 하기",
                   style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            SizedBox(
+              height: 80,
+              child: ElevatedButton(
+                onPressed: _loginWithGoogle,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      "assets/google_icon.png",
+                      width: 40,
+                      height: 40,
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      "Google 로그인",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
