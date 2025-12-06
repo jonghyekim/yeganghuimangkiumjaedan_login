@@ -1,0 +1,98 @@
+[
+  {
+    "id": "mom-is-alien",
+    "name": "엄마는 외계인",
+    "description": "밀크 초콜릿, 다크 초콜릿, 화이트 무스 세 가지 아이스크림에 달콤 바삭한 초코볼이 더해진 아이스크림",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/91c8668227bcf556c43a968b97e342e6.png"
+  },
+  {
+    "id": "mint-chocolate-chip",
+    "name": "민트 초콜릿 칩",
+    "description": "쿨한 당신의 선택! 상쾌한 민트향에 초코칩까지!",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/fb92d70dee836652115c4f3b13175541.png"
+  },
+  {
+    "id": "new-york-cheesecake",
+    "name": "뉴욕 치즈케이크",
+    "description": "부드럽게 즐기는 뉴욕식 정통 치즈케이크 아이스크림",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/60a04a3a5d1b0119f065d12ee7797b2c.png"
+  },
+  {
+    "id": "rainbow-sherbet",
+    "name": "레인보우 샤베트",
+    "description": "상큼한 파인애플, 오렌지, 라즈베리가 만드는 일곱빛깔 무지개",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/5ad63f3af7244a666d981a1497a39fe7.png"
+  },
+  {
+    "id": "cherries-jubilee",
+    "name": "체리쥬빌레",
+    "description": "체리과육이 탱글탱글 씹히는 체리 아이스크림",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/f6609e3e3431d54beceeb1d3787403af.png"
+  },
+  {
+    "id": "shooting-star",
+    "name": "슈팅스타",
+    "description": "블루베리 & 바닐라향에 입안에서 톡톡 터지는 캔디와 신나는 축제",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/a4b71e8b99743c93a7824331850b0a3d.png"
+  },
+  {
+    "id": "oreo-cookie-n-cream",
+    "name": "오레오 쿠키 앤 크림",
+    "description": "부드러운 바닐라향 아이스크림에, 달콤하고 진한 오레오 쿠키가 듬뿍!",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/414246bd9041530d6ad4d30d97aac87c.png"
+  },
+  {
+    "id": "very-berry-strawberry",
+    "name": "베리베리 스트로베리",
+    "description": "새콤상큼 딸기 과육이 듬뿍!",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/ea6608b4f72563b360da5c44c946ddc7.png"
+  },
+  {
+    "id": "31-yogurt",
+    "name": "31요거트",
+    "description": "유산균이 들어있는 오리지널 요거트 아이스크림",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/d56328637eaf86e3273ebc39c57aada7.png"
+  },
+  {
+    "id": "twinberry-cheesecake",
+    "name": "바람과 함께 사라지다",
+    "description": "블루베리와 딸기로 상큼함을 더한 치즈케이크 한 조각",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/01ecc320f5d3a6f32e5188eda373842d.png"
+  },
+  {
+    "id": "cotton-candy-wonderland",
+    "name": "이상한 나라의 솜사탕",
+    "description": "부드럽고 달콤한 솜사탕과 함께 떠나는 이상한 나라로의 여행",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/4db4f9967ad6f603837a40eede965ef0.png"
+  },
+  {
+    "id": "pistachio-almond",
+    "name": "피스타치오 아몬드",
+    "description": "피스타치오와 아몬드가 만나 고소함이 두 배!",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/868364b0ed6038d0c9aee0a10e50d4a9.png"
+  },
+  {
+    "id": "chocolate-mousse",
+    "name": "초콜릿 무스",
+    "description": "초콜릿 칩이 들어있는 진한 초콜릿 아이스크림",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/0d67607c2ca4dde4ec24ac8109a343c2.png"
+  },
+  {
+    "id": "green-tea",
+    "name": "그린티",
+    "description": "엄선된 녹차를 사용한 싱그러운 그린티 아이스크림",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/a6bd7bcdd6bdb56f28df7e98f051abda.png"
+  },
+  {
+    "id": "chocolate",
+    "name": "초콜릿",
+    "description": "진하고 부드러운 정통 초콜릿 아이스크림",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/aff1c39b1653ddb7701abd9b4c8394ee.png"
+  },
+  {
+    "id": "jamoca-almond-fudge",
+    "name": "자모카 아몬드 훠지",
+    "description": "깊고 풍부한 자모카 아이스크림에 고소한 아몬드와 초콜릿 훠지 시럽이 들어있는 제품",
+    "imageUrl": "https://www.baskinrobbins.co.kr/upload/product/main/f31388da0371388c2086a7c90990a097.png"
+  }
+]
