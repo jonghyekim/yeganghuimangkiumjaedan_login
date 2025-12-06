@@ -1,26 +1,80 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'theme/accessible_theme.dart';
+import 'screens/menu_selection_screen.dart';
+import 'services/tts_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 세로 모드 고정 (접근성 향상)
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // TTS 서비스 초기화
+    TtsService().init();
+  }
+
+  @override
+  void dispose() {
+    TtsService().dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '시각 장애인 접근성 데모',
+      title: '배스킨라빈스 접근성 메뉴',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-        fontFamilyFallback: const ["Noto Sans KR", "Malgun Gothic"],
-      ),
-      home: const LoginPage(),
+      theme: AccessibleTheme.themeData,
+      // 접근성 설정
+      builder: (context, child) {
+        return MediaQuery(
+          // 시스템 텍스트 크기 설정을 적절히 제한
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(
+              MediaQuery.of(context).textScaler.scale(1.0).clamp(1.0, 1.5),
+            ),
+          ),
+          child: child!,
+        );
+      },
+      home: const AppEntryPoint(),
     );
   }
 }
+
+/// 앱 진입점
+/// 로그인 후 메뉴 선택으로 이동하거나 바로 메뉴 선택으로 시작
+class AppEntryPoint extends StatelessWidget {
+  const AppEntryPoint({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // 로그인 기능을 사용하려면 LoginPage()로 변경
+    return const MenuSelectionScreen();
+  }
+}
+
+// ============================================
+// 기존 로그인 페이지 (필요시 사용)
+// ============================================
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -32,12 +86,24 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TtsService _ttsService = TtsService();
 
   String _idError = '';
   String _passwordError = '';
 
   final String _demoId = 'a';
   final String _demoPassword = '1234';
+
+  @override
+  void initState() {
+    super.initState();
+    _announceScreen();
+  }
+
+  Future<void> _announceScreen() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    _ttsService.speak('로그인 화면입니다. 아이디와 비밀번호를 입력해주세요.');
+  }
 
   void _login() {
     setState(() {
@@ -51,182 +117,195 @@ class _LoginPageState extends State<LoginPage> {
 
       if (inputId != _demoId) {
         _idError = '오류: 아이디가 올바르지 않습니다. 다시 확인해 주세요.';
+        _ttsService.speak(_idError);
         hasError = true;
       }
 
       if (inputPassword != _demoPassword) {
         _passwordError = '오류: 비밀번호가 올바르지 않습니다.';
+        _ttsService.speak(_passwordError);
         hasError = true;
       }
 
       if (!hasError) {
+        _ttsService.speak('로그인 성공. 메뉴 선택 화면으로 이동합니다.');
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const SuccessPage()),
+          MaterialPageRoute(builder: (context) => const MenuSelectionScreen()),
         );
       }
     });
   }
 
   Future<void> _loginWithGoogle() async {
-    // 로딩 스피너 표시
+    _ttsService.speak('구글 로그인 진행 중입니다. 잠시만 기다려주세요.');
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (context) => Semantics(
+        label: '로그인 진행 중',
+        child: const Center(child: CircularProgressIndicator()),
+      ),
     );
 
-    // 1~2초 정도 대기 (프로토타입용)
     await Future.delayed(const Duration(seconds: 2));
 
-    // 로딩 다이얼로그 닫기
-    Navigator.pop(context);
-
-    // 성공 페이지로 이동
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const SuccessPage()),
-    );
+    if (mounted) {
+      Navigator.pop(context);
+      _ttsService.speak('로그인 성공. 메뉴 선택 화면으로 이동합니다.');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MenuSelectionScreen()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("로그인", style: TextStyle(fontSize: 30)),
+        title: Semantics(
+          header: true,
+          child: const Text("로그인"),
+        ),
         centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(AccessibleTheme.basePadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 20),
 
-            const Text(
-              "아이디 입력:",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            Semantics(
+              label: '아이디 입력 필드',
+              child: const Text(
+                "아이디 입력:",
+                style: AccessibleTheme.subtitleStyle,
+              ),
             ),
             const SizedBox(height: 10),
-            TextField(
-              controller: _idController,
-              style: const TextStyle(fontSize: 30),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(borderSide: BorderSide(width: 3.0)),
-                hintText: '아이디 입력',
-                contentPadding: EdgeInsets.all(20),
+            Semantics(
+              textField: true,
+              label: '아이디',
+              hint: '아이디를 입력하세요',
+              child: TextField(
+                controller: _idController,
+                style: AccessibleTheme.bodyStyle,
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(
+                    borderSide: BorderSide(width: AccessibleTheme.borderWidth),
+                  ),
+                  hintText: '아이디 입력',
+                  contentPadding: const EdgeInsets.all(20),
+                ),
               ),
             ),
             if (_idError.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  _idError,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+              Semantics(
+                liveRegion: true,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    _idError,
+                    style: AccessibleTheme.bodyStyle.copyWith(
+                      color: AccessibleTheme.errorColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
 
             const SizedBox(height: 40),
-            const Text(
-              "비밀번호 입력:",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            Semantics(
+              label: '비밀번호 입력 필드',
+              child: const Text(
+                "비밀번호 입력:",
+                style: AccessibleTheme.subtitleStyle,
+              ),
             ),
             const SizedBox(height: 10),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              style: const TextStyle(fontSize: 30),
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(borderSide: BorderSide(width: 3.0)),
-                hintText: '비밀번호 입력',
-                contentPadding: EdgeInsets.all(20),
+            Semantics(
+              textField: true,
+              label: '비밀번호',
+              hint: '비밀번호를 입력하세요',
+              child: TextField(
+                controller: _passwordController,
+                obscureText: true,
+                style: AccessibleTheme.bodyStyle,
+                decoration: InputDecoration(
+                  border: const OutlineInputBorder(
+                    borderSide: BorderSide(width: AccessibleTheme.borderWidth),
+                  ),
+                  hintText: '비밀번호 입력',
+                  contentPadding: const EdgeInsets.all(20),
+                ),
               ),
             ),
             if (_passwordError.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  _passwordError,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+              Semantics(
+                liveRegion: true,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    _passwordError,
+                    style: AccessibleTheme.bodyStyle.copyWith(
+                      color: AccessibleTheme.errorColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
 
             const SizedBox(height: 60),
 
-            SizedBox(
-              height: 80,
-              child: ElevatedButton(
-                onPressed: _login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[900],
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text(
-                  "로그인 하기",
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            Semantics(
+              button: true,
+              label: '로그인 하기',
+              child: SizedBox(
+                height: AccessibleTheme.buttonHeight,
+                child: ElevatedButton(
+                  onPressed: _login,
+                  child: const Text(
+                    "로그인 하기",
+                    style: AccessibleTheme.buttonStyle,
+                  ),
                 ),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            SizedBox(
-              height: 80,
-              child: ElevatedButton(
-                onPressed: _loginWithGoogle,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      "assets/google_icon.png",
-                      width: 40,
-                      height: 40,
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      "Google 로그인",
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
+            Semantics(
+              button: true,
+              label: '구글 계정으로 로그인',
+              child: SizedBox(
+                height: AccessibleTheme.buttonHeight,
+                child: OutlinedButton(
+                  onPressed: _loginWithGoogle,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        "assets/google_icon.png",
+                        width: 40,
+                        height: 40,
+                        semanticLabel: '구글 아이콘',
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Text(
+                        "Google 로그인",
+                        style: AccessibleTheme.buttonStyle.copyWith(
+                          color: AccessibleTheme.primaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class SuccessPage extends StatelessWidget {
-  const SuccessPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("환영합니다")),
-      body: const Center(
-        child: Text(
-          "로그인 성공!",
-          style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
         ),
       ),
     );
