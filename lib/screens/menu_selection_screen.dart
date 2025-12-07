@@ -6,6 +6,7 @@ import '../theme/accessible_theme.dart';
 import '../utils/korean_number.dart';
 import '../widgets/menu_card.dart';
 import 'flavor_detail_screen.dart';
+import 'qr_scanner_screen.dart';
 
 /// 메뉴 선택 화면
 /// 스와이프로 아이템 간 이동, 탭으로 선택
@@ -112,6 +113,109 @@ class _MenuSelectionScreenState extends State<MenuSelectionScreen> {
     });
   }
 
+  Future<void> _openQrScanner() async {
+    final scanned = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => const QrScannerScreen()),
+    );
+
+    if (!mounted || scanned == null) return;
+    await _handleDeepLink(scanned);
+  }
+
+  Future<void> _handleDeepLink(String rawValue) async {
+    final uri = Uri.tryParse(rawValue.trim());
+    if (uri == null) {
+      await _showDeepLinkError('유효하지 않은 QR 코드입니다.');
+      return;
+    }
+
+    final String? section = _extractSection(uri);
+    final String? id = _extractId(uri);
+
+    switch (section) {
+      case 'menu':
+        await _ttsService.stopAndSpeak('메뉴 화면으로 이동합니다.');
+        if (mounted) {
+          Navigator.popUntil(context, (route) => route.isFirst);
+        }
+        break;
+      case 'flavor':
+        await _goToFlavorById(id);
+        break;
+      default:
+        await _showDeepLinkError('지원하지 않는 QR 링크입니다.');
+    }
+  }
+
+  String? _extractSection(Uri uri) {
+    if (uri.scheme == 'http' || uri.scheme == 'https') {
+      return uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
+    }
+    if (uri.host.isNotEmpty) return uri.host;
+    return uri.pathSegments.isNotEmpty ? uri.pathSegments.first : null;
+  }
+
+  String? _extractId(Uri uri) {
+    if (uri.scheme == 'http' || uri.scheme == 'https') {
+      if (uri.pathSegments.length > 1) return uri.pathSegments[1];
+    }
+
+    if (uri.host.isNotEmpty && uri.pathSegments.isNotEmpty) {
+      return uri.pathSegments.first;
+    }
+
+    if (uri.pathSegments.length > 1) return uri.pathSegments[1];
+
+    return uri.queryParameters['id'];
+  }
+
+  Future<void> _goToFlavorById(String? id) async {
+    if (id == null || id.isEmpty) {
+      await _showDeepLinkError('QR 코드에 메뉴 정보가 없습니다.');
+      return;
+    }
+
+    if (_flavors.isEmpty) {
+      await _showDeepLinkError('메뉴 데이터를 불러오지 못했습니다.');
+      return;
+    }
+
+    FlavorModel? flavor;
+    try {
+      flavor = _flavors.firstWhere((f) => f.id == id);
+    } catch (_) {
+      flavor = null;
+    }
+
+    if (flavor == null) {
+      await _showDeepLinkError('해당 메뉴를 찾을 수 없습니다.');
+      return;
+    }
+
+    final targetFlavor = flavor;
+
+    await _ttsService.stopAndSpeak('${flavor.name} 상세 화면으로 이동합니다.');
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FlavorDetailScreen(flavor: targetFlavor),
+      ),
+    ).then((_) => _announceReturnToMenuSelection());
+  }
+
+  Future<void> _showDeepLinkError(String message) async {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
+    await _ttsService.speak(message);
+  }
+
   /// 이전 화면에서 돌아왔을 때 재안내
   /// 패턴: "페이지명으로 돌아갑니다. N번 아이템명"
   Future<void> _announceReturnToMenuSelection() async {
@@ -162,6 +266,14 @@ class _MenuSelectionScreenState extends State<MenuSelectionScreen> {
           child: const Text('메뉴 선택'),
         ),
         actions: [
+          Semantics(
+            button: true,
+            label: 'QR 스캔',
+            child: IconButton(
+              icon: const Icon(Icons.qr_code_scanner),
+              onPressed: _isLoading ? null : _openQrScanner,
+            ),
+          ),
           // 현재 위치 표시
           if (_flavors.isNotEmpty)
             Semantics(
