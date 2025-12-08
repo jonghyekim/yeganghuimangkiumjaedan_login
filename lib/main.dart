@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'theme/accessible_theme.dart';
 import 'screens/menu_selection_screen.dart';
+import 'screens/qr_entry_screen.dart';
 import 'services/tts_service.dart';
 
 void main() {
@@ -68,7 +69,8 @@ class AppEntryPoint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 로그인 기능을 사용하려면 LoginPage()로 변경
-    return const MenuSelectionScreen();
+    // QR 우선 진입: QrEntryScreen
+    return const QrEntryScreen();
   }
 }
 

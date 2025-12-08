@@ -7,7 +7,21 @@ import '../theme/accessible_theme.dart';
 /// QR 코드 스캔 화면
 /// mobile_scanner로 스캔하고, 감지된 문자열을 상위 화면으로 반환
 class QrScannerScreen extends StatefulWidget {
-  const QrScannerScreen({super.key});
+  /// onScanned가 제공되면 pop하지 않고 콜백을 호출
+  final ValueChanged<String>? onScanned;
+
+  /// 스캔 후 Navigator.pop으로 결과를 반환할지 여부
+  final bool popOnScan;
+
+  /// 자체 Scaffold와 AppBar를 표시할지 여부 (내부 임베드용)
+  final bool showScaffold;
+
+  const QrScannerScreen({
+    super.key,
+    this.onScanned,
+    this.popOnScan = true,
+    this.showScaffold = true,
+  });
 
   @override
   State<QrScannerScreen> createState() => _QrScannerScreenState();
@@ -50,7 +64,21 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       _isHandling = true;
       _message = 'QR 코드가 인식되었습니다.';
     });
-    Navigator.pop(context, rawValue);
+    if (widget.onScanned != null) {
+      widget.onScanned!(rawValue);
+    }
+    if (widget.popOnScan) {
+      Navigator.pop(context, rawValue);
+    } else {
+      // pop하지 않는 경우 스캔 완료 후 상태를 풀어 재스캔 가능
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          setState(() {
+            _isHandling = false;
+          });
+        }
+      });
+    }
   }
 
   void _toggleTorch() {
@@ -59,64 +87,84 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.showScaffold) {
+      return _buildContent();
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        leading: Semantics(
-          button: true,
-          label: '닫기',
-          child: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
+      appBar: _buildAppBar(),
+      body: _buildContent(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      leading: Semantics(
+        button: true,
+        label: '닫기',
+        child: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      title: Semantics(
+        header: true,
+        child: const Text('QR 스캔'),
+      ),
+      actions: [_buildTorchButton()],
+    );
+  }
+
+  Widget _buildTorchButton() {
+    return Semantics(
+      button: true,
+      label: '손전등 토글',
+      child: ValueListenableBuilder(
+        valueListenable: _controller,
+        builder: (context, MobileScannerState state, child) {
+          final torchState = state.torchState;
+          IconData icon;
+          switch (torchState) {
+            case TorchState.on:
+              icon = Icons.flash_on;
+              break;
+            case TorchState.auto:
+            case TorchState.off:
+              icon = Icons.flash_off;
+              break;
+            case TorchState.unavailable:
+              icon = Icons.flashlight_off;
+              break;
+          }
+          return IconButton(
+            icon: Icon(icon),
+            onPressed: torchState == TorchState.unavailable ? null : _toggleTorch,
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return Column(
+      children: [
+        _buildInstruction(),
+        Expanded(
+          child: Stack(
+            children: [
+              _buildScannerView(),
+              _buildScanFrameOverlay(),
+              if (!widget.showScaffold)
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: _buildTorchButton(),
+                ),
+            ],
           ),
         ),
-        title: Semantics(
-          header: true,
-          child: const Text('QR 스캔'),
-        ),
-        actions: [
-          Semantics(
-            button: true,
-            label: '손전등 토글',
-            child: ValueListenableBuilder(
-              valueListenable: _controller,
-              builder: (context, MobileScannerState state, child) {
-                final torchState = state.torchState;
-                IconData icon;
-                switch (torchState) {
-                  case TorchState.on:
-                    icon = Icons.flash_on;
-                    break;
-                  case TorchState.auto:
-                  case TorchState.off:
-                    icon = Icons.flash_off;
-                    break;
-                  case TorchState.unavailable:
-                    icon = Icons.flashlight_off;
-                    break;
-                }
-                return IconButton(
-                  icon: Icon(icon),
-                  onPressed: torchState == TorchState.unavailable ? null : _toggleTorch,
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildInstruction(),
-          Expanded(
-            child: Stack(
-              children: [
-                _buildScannerView(),
-                _buildScanFrameOverlay(),
-              ],
-            ),
-          ),
-          _buildMessageBar(),
-        ],
-      ),
+        _buildMessageBar(),
+      ],
     );
   }
 
@@ -158,19 +206,25 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   }
 
   Widget _buildScanFrameOverlay() {
-    return Center(
-      child: Container(
-        width: 260,
-        height: 260,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AccessibleTheme.primaryColor,
-            width: 4,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double size =
+            (constraints.biggest.shortestSide * 0.85).clamp(260.0, 420.0);
+        return Center(
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: AccessibleTheme.primaryColor,
+                width: 5,
+              ),
+              color: Colors.white.withValues(alpha: 0.04),
+            ),
           ),
-          color: Colors.white.withValues(alpha: 0.04),
-        ),
-      ),
+        );
+      },
     );
   }
 
